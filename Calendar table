@@ -1,7 +1,7 @@
 calendar = 
 --- Date Variables
-VAR _Min_Date = MIN(epm_os_fact_actual[date])
-VAR _Max_Date = MAX(epm_os_s2_reporting_budfcst[date])
+VAR _Min_Date = MIN(fact[date])
+VAR _Max_Date = MAX(fact[date])
 VAR _Extra_Days = 0
 RETURN
  
@@ -54,22 +54,6 @@ ADDCOLUMNS (
     "Num_Month_Year", INT(FORMAT ( [Date], "YYYYMM00" )),
     "Num_Year_Quarter",INT(FORMAT ( [Date], "YYYYQ000" )),
     -- Days in Fact Table --
-    "Date_in_Fact_Table", [Date] <= _Max_Date,
-    --- Moodys FCST ----
-    "Moodys_Q_Fcst" , SWITCH(
-    TRUE(),
-    MONTH ( [Date] ) <= 3, BLANK(),
-    MONTH ( [Date] ) <= 6, FORMAT(MONTH ( [Date] ),"0") & "-" & "Q1",
-    MONTH ( [Date] ) <= 9, FORMAT(MONTH ( [Date] ),"0")& "-" &"Q2",
-    MONTH ( [Date] ) <= 12, FORMAT(MONTH ( [Date] ),"0")& "-" &"Q3",
-    BLANK()),
-    "Moodys_FCST_Slicer" ,SWITCH(
-    TRUE(),
-    MONTH ( [Date] ) <= 3, BLANK(),
-    MONTH ( [Date] ) <= 6, "Q1",
-    MONTH ( [Date] ) <= 9, "Q2",
-    MONTH ( [Date] ) <= 12, "Q3",
-    BLANK())
- 
+    "Date_in_Fact_Table", [Date] <= _Max_Date
  
 )
