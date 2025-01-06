@@ -1,0 +1,25 @@
+let
+   StandardLocal = -5,
+   UTC_Time = DateTimeZone.FixedUtcNow(),
+   CurrentYear = Date.Year( DateTimeZone.SwitchZone( UTC_Time,StandardLocal)),
+   DST_Start = Date.StartOfWeek(#datetimezone( CurrentYear,3,14,0,0,0,StandardLocal,0),Day.Sunday) + #duration(0,2,0,0),
+   DST_End = Date.StartOfWeek( #datetimezone( CurrentYear, 11,7,0,0,0, StandardLocal+1,0),Day.Sunday) + #duration(0,2,0,0),
+   AdjustDST = if UTC_Time >= DST_Start and UTC_Time < DST_End then StandardLocal + 1 else StandardLocal,
+   Source = #table(type table [Refresh=datetimezone], {{UTC_Time}}),
+   #"Add Local Column" = Table.AddColumn(Source, "Last Refreshed", each DateTimeZone.SwitchZone(DateTimeZone.FixedUtcNow(),AdjustDST), DateTime.Type),
+    #"Removed Other Columns" = Table.SelectColumns(#"Add Local Column",{"Last Refreshed"}),
+    #"Changed Type1" = Table.TransformColumnTypes(#"Removed Other Columns",{{"Last Refreshed", type datetimezone}}),
+    #"Inserted Year" = Table.AddColumn(#"Changed Type1", "Year", each Date.Year([Last Refreshed]), Int64.Type),
+    #"Inserted Month" = Table.AddColumn(#"Inserted Year", "Month", each Date.Month([Last Refreshed]), Int64.Type),
+    #"Inserted Day" = Table.AddColumn(#"Inserted Month", "Day", each Date.Day([Last Refreshed]), Int64.Type),
+    #"Insert Year" = Table.TransformColumns(#"Inserted Day", {{"Last Refreshed", each Text.BeforeDelimiter(Text.From(_, "en-US"), "-"), type text}}),
+    #"Short Year" = Table.TransformColumns(#"Insert Year", {{"Year", each Text.End(Text.From(_, "en-US"), 2), type text}}),
+    #"Insert ET" = Table.AddColumn(#"Short Year", "Time Zone", each "ET",type text),
+    MergeDate = Table.CombineColumns(Table.TransformColumnTypes(#"Insert ET", {{"Month", type text}, {"Day", type text}, {"Year", type text}}, "en-US"),{"Month", "Day", "Year"},Combiner.CombineTextByDelimiter("/", QuoteStyle.None),"Date"),
+    #"Insert Hour" = Table.AddColumn(MergeDate, "Hour", each Text.BetweenDelimiters([Last Refreshed], " ", ":", 0, 1), type text),
+    #"Insert TIME" = Table.AddColumn(#"Insert Hour", "TIME", each Text.BetweenDelimiters([Last Refreshed], " ", " ", 1, 0), type text),
+    #"Merged Last Refresh" = Table.CombineColumns(#"Insert TIME",{"Date", "Hour", "TIME", "Time Zone"},Combiner.CombineTextByDelimiter(" ", QuoteStyle.None),"Last Refresh"),
+    #"Removed Columns" = Table.RemoveColumns(#"Merged Last Refresh",{"Last Refreshed"}),
+    #"Added Prefix" = Table.TransformColumns(#"Removed Columns", {{"Last Refresh", each "Last Refresh: " & _, type text}})
+in
+    #"Added Prefix"
