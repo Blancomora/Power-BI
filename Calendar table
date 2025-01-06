@@ -1,0 +1,75 @@
+calendar = 
+--- Date Variables
+VAR _Min_Date = MIN(epm_os_fact_actual[date])
+VAR _Max_Date = MAX(epm_os_s2_reporting_budfcst[date])
+VAR _Extra_Days = 0
+RETURN
+ 
+ADDCOLUMNS (
+    --- Date Parameters
+    CALENDAR (
+         _Min_Date , -- Start Date
+         _Max_Date  + _Extra_Days-- Date + X number of days
+    ),
+    --- Columns
+    -- Day & Week--
+    "Day", DAY ( [Date] ),
+   -- "Day_of_Week", FORMAT ( [Date], "DDDD" ),
+   -- "Day_of_Week_Short", FORMAT ( [Date], "DDD" ),
+   --  "Num_Week_Day", WEEKDAY ( [Date], 2 ), -- LUNES 1 Y DOMINGOS 7
+   -- "Week_Year", WEEKNUM ( [Date], 2 ),
+   -- "Start_of_Week", [Date]-WEEKDAY([Date])+1,
+   -- "End_of_Week",([Date] + 7 - WEEKDAY ( [Date], 2 )),
+    /*"Fortnights", SWITCH (
+            TRUE (),
+            CEILING (DAY([Date]) / 15, 1) = 1, "Fortnight 1",
+            CEILING (DAY([Date]) / 15, 1) = 2, "Fortnight 2",
+            DAY([Date]) = 31 , "Fortnight 2"),*/
+ 
+    -- Month --
+    "Month_Num", MONTH ( [Date] ),
+    "Month", FORMAT ( [Date], "MMMM" ),
+    --"Day_of_Month",DATEDIFF(DATE( YEAR([Date]), MONTH([Date]), 1),EOMONTH([Date],0),DAY)+1,
+   -- "Start_of_Month",DATE( YEAR([Date]), MONTH([Date]), 1),
+    --"End_of_Month",EOMONTH([Date],0),
+    "Month_Short", FORMAT ( [Date], "MMM" ),
+    "Month_Year_Short", FORMAT ( [Date], "mmm YYYY" ),
+    -- Quarter --
+    "Quarter", "Q"  & CONVERT(QUARTER ( [Date] ),STRING),
+    "Quarter_Num", QUARTER ( [Date] ),
+    "Quarter_Year", "Q"  & FORMAT ( [Date], "q YYYY" ),
+    -- Four Month - Quater
+  --   "Four_Month_Quater_Num",IF(MONTH([Date]) <= 4,1,IF(MONTH([Date]) > 4 && MONTH([Date]) <= 8,2,3)),
+  --  "Four_Month_Quater",IF(MONTH([Date]) <= 4,"Four Month Quater 1",IF(MONTH([Date]) > 4 && MONTH([Date]) <= 8,
+  --                  "Four Month Quater 2","Four Month Quater 3")),
+    -- Year --
+    "Year", YEAR ( [Date] ),
+    --"Start_of_Year",DATE( YEAR([Date]),1,1),
+    --"End_of_Year",DATE( YEAR([Date]),12,31),
+    -- Semester --
+  --  "Semester",  "Semestre " & CONVERT((ROUNDUP(MONTH( [Date] )/6,0)),STRING) ,
+  --  "Semester_Num", ROUNDUP(MONTH( [Date] )/6,0),
+    -- Sort Columns --
+    "Num_Date", INT(FORMAT ( [Date], "YYYYMMDD" )),
+    "Num_Month_Year", INT(FORMAT ( [Date], "YYYYMM00" )),
+    "Num_Year_Quarter",INT(FORMAT ( [Date], "YYYYQ000" )),
+    -- Days in Fact Table --
+    "Date_in_Fact_Table", [Date] <= _Max_Date,
+    --- Moodys FCST ----
+    "Moodys_Q_Fcst" , SWITCH(
+    TRUE(),
+    MONTH ( [Date] ) <= 3, BLANK(),
+    MONTH ( [Date] ) <= 6, FORMAT(MONTH ( [Date] ),"0") & "-" & "Q1",
+    MONTH ( [Date] ) <= 9, FORMAT(MONTH ( [Date] ),"0")& "-" &"Q2",
+    MONTH ( [Date] ) <= 12, FORMAT(MONTH ( [Date] ),"0")& "-" &"Q3",
+    BLANK()),
+    "Moodys_FCST_Slicer" ,SWITCH(
+    TRUE(),
+    MONTH ( [Date] ) <= 3, BLANK(),
+    MONTH ( [Date] ) <= 6, "Q1",
+    MONTH ( [Date] ) <= 9, "Q2",
+    MONTH ( [Date] ) <= 12, "Q3",
+    BLANK())
+ 
+ 
+)
